@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fireflies Meeting Insights</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1rem 0 1.5rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      background: #f7f7f7;
+      font-size: 0.95rem;
+    }
+    button.active {
+      border-color: #4f46e5;
+      background: #eef2ff;
+    }
+    #status {
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 0.5rem;
+    }
+    #output {
+      border: 1px solid #ddd;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      min-height: 100px;
+      white-space: pre-wrap;
+      background: #fafafa;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Fireflies Meeting Insights</h1>
+  <p>Select a period to generate an AI summary of your recent meetings.</p>
+
+  <div class="buttons">
+    <button data-period="week">Past Week</button>
+    <button data-period="month">Past Month</button>
+    <button data-period="quarter">Past Quarter</button>
+    <button data-period="year">Past Year</button>
+  </div>
+
+  <div id="status">No request yet.</div>
+  <div id="output"></div>
+
+  <script>
+    const webhookUrl = "https://hook.make.com/YOUR_MAKE_WEBHOOK_URL";
+
+    const buttons = document.querySelectorAll("button[data-period]");
+    const statusEl = document.getElementById("status");
+    const outputEl = document.getElementById("output");
+
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const period = btn.dataset.period;
+        buttons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        fetchSummary(period);
+      });
+    });
+
+    async function fetchSummary(period) {
+      statusEl.textContent = `Requesting ${period} summary...`;
+      outputEl.textContent = "";
+
+      try {
+        const res = await fetch(webhookUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ period })
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const text = await res.text(); // because webhook returns plain markdown/text
+        statusEl.textContent = `Done: ${period} summary generated.`;
+        outputEl.textContent = text;
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Error fetching summary.";
+        outputEl.textContent = String(err);
+      }
+    }
+  </script>
+</body>
+</html>
